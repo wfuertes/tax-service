@@ -1,19 +1,18 @@
 package com.wfuertes.tax.dao;
 
-import com.google.inject.Inject;
 import com.wfuertes.tax.model.Tax;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 
+@Repository
 public class TaxDaoJpa implements TaxDao {
 
-    private final EntityManager entityManager;
-
-    @Inject
-    public TaxDaoJpa(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Tax findOne(String id) {
@@ -26,10 +25,9 @@ public class TaxDaoJpa implements TaxDao {
     }
 
     @Override
+    @Transactional
     public Tax save(Tax tax) {
-        entityManager.getTransaction().begin();
         Tax saved = entityManager.merge(tax);
-        entityManager.getTransaction().commit();
         return saved;
     }
 }

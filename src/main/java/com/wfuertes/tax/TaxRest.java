@@ -1,13 +1,14 @@
 package com.wfuertes.tax;
 
 import com.google.gson.Gson;
-import com.wfuertes.tax.config.TaxModule;
+import com.wfuertes.tax.config.TaxConfig;
 import com.wfuertes.tax.dao.TaxDao;
 import com.wfuertes.tax.dto.CalculationForm;
 import com.wfuertes.tax.dto.CalculationView;
 import com.wfuertes.tax.dto.TaxForm;
 import com.wfuertes.tax.dto.TaxView;
 import com.wfuertes.tax.model.Tax;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,9 +19,10 @@ import static spark.Spark.*;
 public class TaxRest {
 
     public static void main(String[] args) {
+        final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TaxConfig.class);
 
-        final Gson gson = TaxModule.getInstance(Gson.class);
-        final TaxDao taxDao = TaxModule.getInstance(TaxDao.class);
+        final Gson gson = context.getBean(Gson.class);
+        final TaxDao taxDao = context.getBean(TaxDao.class);
 
         /**
          * Show the available taxes in the database
