@@ -2,12 +2,15 @@ package com.wfuertes.tax.dto;
 
 import java.math.BigDecimal;
 
-public class CalculationView {
+public class CalculationView extends BasicResponse {
 
     private String taxName;
     private BigDecimal taxValue;
     private BigDecimal value;
-    private String message;
+
+    public CalculationView(int status, String message) {
+        super(status, message);
+    }
 
     public String getTaxName() {
         return taxName;
@@ -33,11 +36,4 @@ public class CalculationView {
         this.value = value;
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

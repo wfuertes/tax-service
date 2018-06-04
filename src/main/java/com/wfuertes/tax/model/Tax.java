@@ -1,21 +1,15 @@
 package com.wfuertes.tax.model;
 
+import com.wfuertes.tax.dto.TaxForm;
 import com.wfuertes.tax.strategies.TaxCalculation;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "taxes")
 public class Tax implements TaxCalculation {
 
-    @Id
     private String id;
     private BigDecimal value;
-
-    @Column(name = "created_at")
-    @Convert(converter = LocalDateTimeAttributeConverter.class)
     private LocalDateTime createdAt;
 
     public String getId() {
@@ -53,5 +47,40 @@ public class Tax implements TaxCalculation {
                 "id='" + id + '\'' +
                 ", value=" + value +
                 '}';
+    }
+
+    public static Builder fromForm(TaxForm form) {
+        return new Builder()
+                .withId(form.getId())
+                .withValue(form.getValue());
+    }
+
+    public static class Builder {
+        private String id;
+        private BigDecimal value;
+        private LocalDateTime createdAt;
+
+        public Builder withId(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withValue(BigDecimal value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder withCreateAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Tax build() {
+            Tax newTax = new Tax();
+            newTax.setId(id);
+            newTax.setValue(value);
+            newTax.setCreatedAt(createdAt);
+            return newTax;
+        }
     }
 }

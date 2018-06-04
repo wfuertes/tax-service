@@ -22,4 +22,5 @@ public class TaxForm {
     public void setValue(BigDecimal value) {
         this.value = value;
     }
+
 }

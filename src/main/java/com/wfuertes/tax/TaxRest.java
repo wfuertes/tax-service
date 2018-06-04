@@ -2,17 +2,11 @@ package com.wfuertes.tax;
 
 import com.google.gson.Gson;
 import com.wfuertes.tax.config.TaxConfig;
-import com.wfuertes.tax.dao.TaxDao;
-import com.wfuertes.tax.dto.CalculationForm;
-import com.wfuertes.tax.dto.CalculationView;
-import com.wfuertes.tax.dto.TaxForm;
-import com.wfuertes.tax.dto.TaxView;
-import com.wfuertes.tax.model.Tax;
+import com.wfuertes.tax.dto.*;
+import com.wfuertes.tax.service.TaxService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.dao.DuplicateKeyException;
+import spark.ResponseTransformer;
 
 import static spark.Spark.*;
 
@@ -22,68 +16,52 @@ public class TaxRest {
         final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TaxConfig.class);
 
         final Gson gson = context.getBean(Gson.class);
-        final TaxDao taxDao = context.getBean(TaxDao.class);
+        final TaxService taxService = context.getBean(TaxService.class);
+        final ResponseTransformer transformToJson = context.getBean(ResponseTransformer.class);
 
         /**
          * Show the available taxes in the database
          */
         get("/taxes", (req, res) -> {
-            List<TaxView> taxViews = taxDao.findAll().stream().map(entity -> {
-                TaxView taxView = new TaxView();
-                taxView.setId(entity.getId());
-                taxView.setCreatedAt(entity.getCreatedAt());
-                taxView.setValue(entity.getValue());
-                return taxView;
-            }).collect(Collectors.toList());
-
             res.status(200);
             res.type("application/json");
-
-            return gson.toJson(taxViews);
-        });
+            return taxService.findAll();
+        }, transformToJson);
 
         /**
          * Applies the specified tax to the given value at the body
          */
         post("/taxes/:id", (req, res) -> {
-            String taxType = req.params("id");
-            CalculationForm calculationForm = gson.fromJson(req.body(), CalculationForm.class);
-
-            Tax tax = taxDao.findOne(taxType);
-
-            CalculationView calculationView = new CalculationView();
-            calculationView.setTaxName(taxType);
-            calculationView.setTaxValue(tax.calculate(calculationForm.getValue()));
-            calculationView.setValue(tax.getValue());
-            calculationView.setMessage("Tax calculated successfully");
-
             res.status(201);
             res.type("application/json");
-
-            return gson.toJson(calculationView);
-        });
+            String taxId = req.params("id");
+            return taxService.calculate(taxId, gson.fromJson(req.body(), CalculationForm.class));
+        }, transformToJson);
 
         /**
          * Create a new type of tax
          */
         post("/taxes", (req, res) -> {
             TaxForm taxForm = gson.fromJson(req.body(), TaxForm.class);
-            Tax newTax = new Tax();
-            newTax.setId(taxForm.getId());
-            newTax.setValue(taxForm.getValue());
-            newTax.setCreatedAt(LocalDateTime.now());
-
-            Tax createdTax = taxDao.save(newTax);
-            TaxView taxView = new TaxView();
-            taxView.setId(createdTax.getId());
-            taxView.setValue(createdTax.getValue());
-            taxView.setCreatedAt(createdTax.getCreatedAt());
-            taxView.setMessage("New tax created successfully");
-
             res.status(201);
             res.type("application/json");
+            return taxService.save(taxForm);
+        }, transformToJson);
 
-            return gson.toJson(taxView);
+        internalServerError((req, res) -> {
+            return "Enexpected error :(";
+        });
+
+        exception(Exception.class, (e, req, res) -> {
+            res.status(500);
+            res.body("Internal server error: " + e.getMessage());
+        });
+
+        exception(DuplicateKeyException.class, (e, req, res) -> {
+            TaxForm taxForm = gson.fromJson(req.body(), TaxForm.class);
+            res.status(400);
+            res.type("application/json");
+            res.body(gson.toJson(new BasicResponse(400, "Already exists a tax with ID: " + taxForm.getId())));
         });
     }
 }
