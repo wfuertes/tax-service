@@ -1,24 +1,34 @@
-package com.wfuertes.tax;
+package com.wfuertes.tax.rest;
 
 import com.google.gson.Gson;
 import com.wfuertes.tax.config.TaxConfig;
 import com.wfuertes.tax.dto.*;
 import com.wfuertes.tax.service.TaxService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
 import spark.ResponseTransformer;
 
 import static spark.Spark.*;
 
-public class TaxRest {
+@Service
+public class TaxRest implements RestService {
 
-    public static void main(String[] args) {
-        final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TaxConfig.class);
+    private final Gson gson;
+    private final TaxService taxService;
+    private final ResponseTransformer transformToJson;
 
-        final Gson gson = context.getBean(Gson.class);
-        final TaxService taxService = context.getBean(TaxService.class);
-        final ResponseTransformer transformToJson = context.getBean(ResponseTransformer.class);
+    @Autowired
+    public TaxRest(Gson gson, TaxService taxService, ResponseTransformer transformToJson) {
+        this.gson = gson;
+        this.taxService = taxService;
+        this.transformToJson = transformToJson;
+    }
 
+    @Override
+    public void initialize() {
         /**
          * Show the available taxes in the database
          */
